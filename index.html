@@ -99,6 +99,8 @@ h1{font-size:clamp(28px,5vw,40px);line-height:1.15}
 .legend .panel{margin:0;background:var(--surface);border:1px solid var(--line)}
 .jump{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
 .jump .act{padding-inline:16px;background:var(--surface)}
+.jump.top{margin-top:12px}
+.act.togroup{border-color:var(--gc,var(--line-2))}
 
 /* exercises */
 .tools{display:flex;gap:8px;align-items:center;margin-inline-start:auto}
@@ -839,6 +841,13 @@ const ICON_GO='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6
 
 function go(entry){stack[stack.length-1].scroll=window.scrollY;stack.push(entry);render(true);}
 function back(){if(stack.length>1){stack.pop();render(false);}}
+function toGroup(gid){
+  const i=stack.map(e=>e.v==='group'&&e.g===gid).lastIndexOf(true);
+  if(i>0){stack.length=i+1;render(false);}else{stack.length=1;stack.push({v:'group',g:gid});render(true);}
+}
+const ICON_BACK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+const groupBtn=g=>`<button class="act togroup" type="button" data-togroup="${g.id}">${ICON_BACK}חזור ל${esc(g.name)}</button>`;
+function wireGroupBtns(){$main.querySelectorAll('[data-togroup]').forEach(b=>b.onclick=()=>toGroup(b.dataset.togroup));}
 function home(){stack.length=1;render(true);}
 document.getElementById('btnHome').onclick=home;
 $back.onclick=back;
@@ -908,14 +917,15 @@ function renderIllus(id){
   const vis=v=>{const f=m.fig[v];return {o:new Set((f.o||[]).map(x=>x.n)),i:new Set((f.i||[]).map(x=>x.n))};};
   $main.innerHTML=`
   <div class="head" style="--gc:var(${g.c})"><div><span class="eyebrow">${g.name}</span><h1><bdi>${esc(m.name)}</bdi></h1>
-  <p class="lead">${m.photo?'השריר מסומן באדום באיור אנטומי אמיתי.':'השריר מסומן באדום, ושאר השרירים בגוון בהיר.'} החצים מצביעים על השריר, על ה-Origin (ירוק) ועל ה-Insertion (כחול). המספרים תואמים לרשימה שמתחת לאיור.</p></div></div>
+  <p class="lead">${m.photo?'השריר מסומן באדום באיור אנטומי אמיתי.':'השריר מסומן באדום, ושאר השרירים בגוון בהיר.'} החצים מצביעים על השריר, על ה-Origin (ירוק) ועל ה-Insertion (כחול). המספרים תואמים לרשימה שמתחת לאיור.</p><div class="jump top">${groupBtn(g)}</div></div></div>
   <div class="plate">${views.map(v=>`<figure>${m.photo?photoSVG(m,v):plateSVG(m,v)}<figcaption>${v==='front'?'מבט קדמי':'מבט אחורי'}${m.photo?`<span class="credit" dir="ltr">Image: <a href="${m.photo[v].url}" target="_blank" rel="noopener">${esc(m.photo[v].cr)}</a>, via Wikimedia Commons</span>`:''}</figcaption></figure>`).join('')}</div>
   <div class="legend">
     <div class="panel">${oiPanel(m)}</div>
     <div class="panel">${acPanel(m)}</div>
   </div>
-  <div class="jump"><button class="act" type="button" id="toEx">תרגילים ל-<bdi>${esc(m.name)}</bdi> ${ICON_GO}</button></div>`;
+  <div class="jump">${groupBtn(g)}<button class="act" type="button" id="toEx">תרגילים ל-<bdi>${esc(m.name)}</bdi> ${ICON_GO}</button></div>`;
   document.getElementById('toEx').onclick=()=>go({v:'ex',m:id});
+  wireGroupBtns();
 }
 
 function exCard(key,trains,i){
@@ -934,10 +944,11 @@ function renderEx(id){
   setCrumb([g.name,m.name,'תרגילים']);
   $main.innerHTML=`
   <div class="head" style="--gc:var(${g.c})"><div><span class="eyebrow">${g.name}</span><h1>תרגילים ל-<bdi>${esc(m.name)}</bdi></h1>
-  <p class="lead">התרגילים נבחרו לפי ה-Action של השריר. הדמות האפורה היא תנוחת ההתחלה. האיבר שזז מסומן באדום.</p></div>
+  <p class="lead">התרגילים נבחרו לפי ה-Action של השריר. הדמות האפורה היא תנוחת ההתחלה. האיבר שזז מסומן באדום.</p><div class="jump top">${groupBtn(g)}</div></div>
   <div class="tools"><button class="act" type="button" id="play" style="background:var(--surface)"></button></div></div>
   <div class="exgrid">${m.ex.map(([k,t],i)=>exCard(k,t,i)).join('')}</div>
-  <div class="jump"><button class="act" type="button" id="toIl">איור של <bdi>${esc(m.name)}</bdi> ${ICON_GO}</button></div>`;
+  <div class="jump">${groupBtn(g)}<button class="act" type="button" id="toIl">איור של <bdi>${esc(m.name)}</bdi> ${ICON_GO}</button></div>`;
+  wireGroupBtns();
   anims=m.ex.map(([k],i)=>{const E=EX[k];return {el:$main.querySelector(`[data-anim="${i}"]`),E,A:{...E.a},B:{...E.a,...E.b},mv:movingSet(E,{...E.a},{...E.a,...E.b})};});
   const pb=document.getElementById('play');
   const setPb=()=>{pb.textContent=playing?'עצירת האנימציה':'הפעלת האנימציה';pb.setAttribute('aria-pressed',String(!playing));};
